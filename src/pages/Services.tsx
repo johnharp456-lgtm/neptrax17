@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import WebGLParticles from './WebGLParticles';
 
 interface ServicesProps {
@@ -10,86 +10,128 @@ export default function Services({ onNavigate }: ServicesProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const servicesGridRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number>(0);
 
-  const handleDiscoverClick = () => {
-    servicesGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  useEffect(() => {
-    setTimeout(() => setIsLoaded(true), 300);
+  // Smooth scroll with easing
+  const handleDiscoverClick = useCallback(() => {
+    servicesGridRef.current?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
   }, []);
 
-  // Reveal on scroll for showcase section
+  // Optimized initial load with requestAnimationFrame
+  useEffect(() => {
+    const loadTimer = setTimeout(() => {
+      requestAnimationFrame(() => setIsLoaded(true));
+    }, 150);
+    return () => clearTimeout(loadTimer);
+  }, []);
+
+  // Enhanced intersection observer with better performance
   useEffect(() => {
     const revealElements = document.querySelectorAll('.reveal-up');
     const revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('in-view');
+            requestAnimationFrame(() => {
+              entry.target.classList.add('in-view');
+            });
           }
         });
       },
-      { threshold: 0.15 }
+      { 
+        threshold: 0.1,
+        rootMargin: '50px 0px -50px 0px'
+      }
     );
 
     revealElements.forEach((el) => revealObserver.observe(el));
-
     return () => revealObserver.disconnect();
   }, []);
 
-    // Intersection Observer for minimal service animations
+  // Optimized service card animations
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('service-visible');
+            requestAnimationFrame(() => {
+              entry.target.classList.add('service-visible');
+            });
           }
         });
       },
-      { threshold: 0.2, rootMargin: '0px 0px -100px 0px' }
+      { 
+        threshold: 0.15, 
+        rootMargin: '0px 0px -80px 0px' 
+      }
     );
 
-    cardsRef.current.forEach((card) => {
+    const currentCards = cardsRef.current;
+    currentCards.forEach((card) => {
       if (card) observer.observe(card);
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(animationFrameRef.current);
+    };
   }, []);
-  
-  // Image tilt effect
+
+  // Enhanced tilt effect with performance optimization
   useEffect(() => {
     const images = document.querySelectorAll('.services-visual img');
+    let isTilting = false;
 
-    images.forEach((img) => {
-      const handleMouseMove = (ev: MouseEvent) => {
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (isTilting) return;
+      isTilting = true;
+
+      animationFrameRef.current = requestAnimationFrame(() => {
         const target = ev.currentTarget as HTMLElement;
         const r = target.getBoundingClientRect();
         const x = (ev.clientX - r.left) / r.width - 0.5;
         const y = (ev.clientY - r.top) / r.height - 0.5;
-        target.style.transform = `perspective(900px) rotateX(${y * 6}deg) rotateY(${x * -6}deg) scale(1.02)`;
-      };
+        
+        target.style.transform = `
+          perspective(1200px) 
+          rotateX(${y * 8}deg) 
+          rotateY(${x * -8}deg) 
+          scale3d(1.05, 1.05, 1.05)
+          translateZ(20px)
+        `;
+        target.style.transition = 'transform 0.1s linear';
+        
+        isTilting = false;
+      });
+    };
 
-      const handleMouseLeave = (ev: MouseEvent) => {
-        const target = ev.currentTarget as HTMLElement;
-        target.style.transform = '';
-      };
+    const handleMouseLeave = (ev: MouseEvent) => {
+      const target = ev.currentTarget as HTMLElement;
+      target.style.transform = '';
+      target.style.transition = 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
+    };
 
+    images.forEach((img) => {
       img.addEventListener('mousemove', handleMouseMove as EventListener);
       img.addEventListener('mouseleave', handleMouseLeave as EventListener);
+    });
 
-      return () => {
+    return () => {
+      images.forEach((img) => {
         img.removeEventListener('mousemove', handleMouseMove as EventListener);
         img.removeEventListener('mouseleave', handleMouseLeave as EventListener);
-      };
-    });
+      });
+      cancelAnimationFrame(animationFrameRef.current);
+    };
   }, []);
 
   const servicesList = [
     {
       title: 'Custom Website Design',
-      description: 'Crafted pixel-perfect designs that reflect your brand identity. We create stunning, user-friendly websites that captivate visitors and convert them into loyal customers through strategic visual storytelling,',
+      description: 'Crafted pixel-perfect designs that reflect your brand identity. We create stunning, user-friendly websites that captivate visitors and convert them into loyal customers through strategic visual storytelling.',
     },
     {
       title: 'Full-Stack Web Development',
@@ -139,94 +181,174 @@ export default function Services({ onNavigate }: ServicesProps) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] overflow-hidden">
-      {/* Hero Section */}
+      {/* Enhanced Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
         <div className="absolute inset-0">
           <WebGLParticles />
-          <div className="absolute inset-0 bg-black/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40"></div>
         </div>
 
-        <div className={`relative z-10 max-w-6xl mx-auto px-6 text-center transition-all duration-1000 ${
-          isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        <div className={`relative z-10 max-w-6xl mx-auto px-6 text-center transition-all duration-1000 ease-out ${
+          isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}>
-          <div className="mb-8">
-            <h1 className="text-6xl md:text-8xl font-black mb-6">
+          <div className="mb-8 transform-gpu">
+            <h1 className="text-6xl md:text-8xl font-black mb-6 tracking-tight">
               <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-teal-500 bg-clip-text text-transparent animate-glow-text">
                 OUR SERVICES
               </span>
             </h1>
           </div>
 
-          <div className="mb-12">
+          <div className="mb-12 transform-gpu">
             <p className="text-xl md:text-2xl text-gray-300 font-light max-w-3xl mx-auto leading-relaxed">
               Crafting digital excellence through innovative solutions that transform your vision into reality
             </p>
           </div>
 
-          <div className="flex gap-6 justify-center flex-wrap">
+          <div className="flex gap-6 justify-center flex-wrap transform-gpu">
             <button
               onClick={handleDiscoverClick}
-              className="group relative px-12 py-4 rounded-full bg-transparent border-2 border-cyan-400/50 text-white font-semibold text-lg overflow-hidden transition-all duration-500 hover:scale-105 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/25 backdrop-blur-sm"
+              className="group relative px-12 py-4 rounded-full bg-transparent border-2 border-cyan-400/50 text-white font-semibold text-lg overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/30 backdrop-blur-sm transform-gpu"
             >
               <span className="relative z-10 flex items-center gap-2">
                 <span>Discover</span>
-                <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
+                <span className="group-hover:translate-x-2 transition-transform duration-300 ease-out">→</span>
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-600/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-600/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-700 ease-out origin-left"></div>
             </button>
           </div>
         </div>
       </section>
 
-{/* Minimalist Services Gallery - FIXED */}
-<section ref={servicesGridRef} className="relative py-32 bg-white">
-  <div className="max-w-7xl mx-auto px-8 md:px-12 lg:px-16">
-    {/* Section Header */}
-    <div className="mb-24 text-center">
-      <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-6 tracking-tight">
-        What We Offer
-      </h2>
-      <p className="text-xl text-gray-600 max-w-2xl mx-auto font-light">
-        Comprehensive solutions designed to elevate your digital presence
-      </p>
-    </div>
+      {/* Enhanced Minimalist Services Gallery */}
+      <section ref={servicesGridRef} className="relative py-32 bg-white overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white"></div>
+        
+        <div className="max-w-7xl mx-auto px-8 md:px-12 lg:px-16 relative z-10">
+          {/* Enhanced Section Header */}
+          <div className="mb-24 text-center transform-gpu">
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-6 tracking-tight">
+              What We Offer
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto font-light">
+              Comprehensive solutions designed to elevate your digital presence
+            </p>
+          </div>
 
-    {/* Two-Column Grid - FIXED LAYOUT */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-8">
-      {servicesList.map((service, index) => (
-        <div
-          key={index}
-          ref={(el) => (cardsRef.current[index] = el)}
-          className="minimal-service-item group relative py-8 border-t border-gray-200"
-        >
-          {/* Content Container - FIXED PADDING */}
-          <div className="flex gap-6 items-start">
-            {/* Number - FIXED POSITIONING */}
-            <div className="flex-shrink-0 text-5xl font-bold text-gray-200 transition-all duration-500 group-hover:text-gray-300 group-hover:scale-110 min-w-[60px]">
-              {String(index + 1).padStart(2, '0')}
-            </div>
+          {/* Enhanced Two-Column Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-20 gap-y-12">
+            {servicesList.map((service, index) => (
+              <div
+                key={index}
+                ref={(el) => {
+                  if (el && !cardsRef.current.includes(el)) {
+                    cardsRef.current[index] = el;
+                  }
+                }}
+                className="minimal-service-item group relative py-8 border-t border-gray-200/80 transform-gpu transition-all duration-700 ease-out hover:border-gray-300"
+                onMouseEnter={() => setHoveredCard(index)}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
+                {/* Enhanced Content Container */}
+                <div className="flex gap-6 items-start">
+                  {/* Enhanced Number */}
+                  <div className="flex-shrink-0 text-5xl font-bold text-gray-200 transition-all duration-600 ease-out group-hover:text-gray-300 group-hover:scale-110 min-w-[60px] transform-gpu">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
 
-            {/* Text Content - FIXED WIDTH MANAGEMENT */}
-            <div className="flex-1 min-w-0"> {/* This prevents text overflow */}
-              {/* Title */}
-              <h3 className="text-xl md:text-2xl font-bold text-black mb-3 tracking-tight break-words">
-                {service.title}
-              </h3>
+                  {/* Enhanced Text Content */}
+                  <div className="flex-1 min-w-0 transform-gpu">
+                    {/* Enhanced Title */}
+                    <h3 className="text-xl md:text-2xl font-bold text-black mb-4 tracking-tight break-words transition-all duration-500 ease-out group-hover:translate-x-2">
+                      {service.title}
+                    </h3>
 
-              {/* Expanding Line */}
-              <div className="minimal-line w-0 h-px bg-black mb-4 transition-all duration-700 group-hover:w-16"></div>
+                    {/* Enhanced Expanding Line */}
+                    <div className="minimal-line w-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 mb-5 transition-all duration-800 ease-out group-hover:w-20 transform-gpu"></div>
 
-              {/* Description - FIXED TEXT WRAPPING */}
-              <p className="text-gray-600 leading-relaxed font-light text-base break-words">
-                {service.description}
-              </p>
-            </div>
+                    {/* Enhanced Description */}
+                    <p className="text-gray-600 leading-relaxed font-light text-base break-words transition-all duration-500 ease-out group-hover:text-gray-700">
+                      {service.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Hover Background Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-50/0 via-blue-50/0 to-teal-50/0 group-hover:from-cyan-50/30 group-hover:via-blue-50/20 group-hover:to-teal-50/30 transition-all duration-700 ease-out rounded-xl -z-10 transform-gpu"></div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
+      </section>
+
+      <style jsx>{`
+        @keyframes glow-text {
+          0%, 100% {
+            filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.3));
+          }
+          50% {
+            filter: drop-shadow(0 0 30px rgba(56, 189, 248, 0.6)) drop-shadow(0 0 40px rgba(34, 211, 238, 0.3));
+          }
+        }
+        
+        .animate-glow-text {
+          animation: glow-text 3s ease-in-out infinite;
+        }
+
+        /* Enhanced reveal animations */
+        .reveal-up {
+          opacity: 0;
+          transform: translateY(40px);
+          transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal-up.in-view {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* Enhanced service item animations */
+        .minimal-service-item {
+          opacity: 0;
+          transform: translateY(30px) translateX(-20px);
+          transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .minimal-service-item.service-visible {
+          opacity: 1;
+          transform: translateY(0) translateX(0);
+        }
+
+        /* Staggered animation for children */
+        .minimal-service-item.service-visible:nth-child(odd) {
+          transition-delay: 0.1s;
+        }
+
+        .minimal-service-item.service-visible:nth-child(even) {
+          transition-delay: 0.2s;
+        }
+
+        /* Enhanced hover states */
+        .minimal-service-item:hover {
+          transform: translateY(-2px) translateX(4px);
+        }
+
+        /* Smooth scrolling */
+        html {
+          scroll-behavior: smooth;
+        }
+
+        /* Performance optimizations */
+        .transform-gpu {
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          perspective: 1000px;
+        }
+      `}</style>
     </div>
-  </div>
-</section>
+  );
+}
 
       {/* Services Showcase Section */}
       <section id="services-showcase-2" aria-label="Services showcase" className="relative bg-[#0b0b0b] py-[120px] overflow-hidden">
