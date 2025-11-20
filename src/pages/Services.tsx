@@ -1,239 +1,169 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import WebGLParticles from './WebGLParticles';
 
 interface ServicesProps {
   onNavigate: (section: string) => void;
 }
 
-// Move services list outside component to prevent re-renders
-const SERVICES_LIST = [
-  {
-    title: 'Custom Website Design',
-    description: 'Crafted pixel-perfect designs that reflect your brand identity. We create stunning, user-friendly websites that captivate visitors and convert them into loyal customers through strategic visual storytelling.',
-  },
-  {
-    title: 'Full-Stack Web Development',
-    description: 'Building robust, scalable web apps with cutting-edge technologies. From front-end interfaces to back-end architecture, we deliver high-performance solutions that grow with your business needs.',
-  },
-  {
-    title: 'AI-Powered Chatbots',
-    description: 'Intelligent conversational AI that engages customers 24/7. Our chatbots provide instant support, answer queries, and guide users through seamless experiences while learning from every interaction.',
-  },
-  {
-    title: 'Social Media Management',
-    description: 'Strategic social media campaigns that build communities and drive engagement. We manage your presence across platforms, create compelling content, and grow your audience organically.',
-  },
-  {
-    title: 'Brand Identity & Visual Design',
-    description: 'Comprehensive brand development from concept to execution. We craft memorable logos, color palettes, and visual systems that establish strong brand recognition and communicate your unique value proposition.',
-  },
-  {
-    title: 'Social Media & Digital Advertising',
-    description: 'High-converting ad campaigns across Facebook, Instagram, LinkedIn, and Google. We optimize targeting, creative, and messaging to maximize ROI and deliver measurable results for your marketing investment.',
-  },
-  {
-    title: 'SEO Optimization & Growth Strategy',
-    description: 'Comprehensive SEO solutions that boost your search rankings and organic traffic. We implement technical optimizations, content strategies, and link-building campaigns that deliver sustainable growth and visibility.',
-  },
-  {
-    title: 'AI Automation Agents',
-    description: 'Custom AI-powered automation that streamlines workflows and increases efficiency. From data processing to customer service, we build intelligent agents that handle repetitive tasks and free up your team.',
-  },
-  {
-    title: 'Mobile App Design & Development',
-    description: 'Native and cross-platform mobile applications that deliver exceptional user experiences. We design and develop iOS and Android apps that are intuitive, fast, and aligned with your business objectives.',
-  },
-  {
-    title: 'Marketing Audit & Strategic Planning',
-    description: 'In-depth analysis of your marketing performance with actionable recommendations. We identify opportunities, optimize spending, and create comprehensive strategies that align with your business goals and budget.',
-  },
-  {
-    title: 'E-Commerce Store Development',
-    description: 'Complete e-commerce solutions built for conversions and scalability. From product catalogs to secure checkout systems, we create online stores that provide seamless shopping experiences and drive revenue.',
-  },
-  {
-    title: 'Content Creation & Copywriting',
-    description: 'Compelling content that resonates with your audience and drives action. Our expert writers craft SEO-optimized blog posts, website copy, and marketing materials that establish authority and generate leads.',
-  }
-];
-
 export default function Services({ onNavigate }: ServicesProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const servicesGridRef = useRef<HTMLDivElement>(null);
-  const observersRef = useRef<{
-    reveal: IntersectionObserver | null;
-    services: IntersectionObserver | null;
-  }>({ reveal: null, services: null });
 
-  const handleDiscoverClick = useCallback(() => {
-    servicesGridRef.current?.scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
+  const handleDiscoverClick = () => {
+    servicesGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  useEffect(() => {
+    setTimeout(() => setIsLoaded(true), 300);
   }, []);
 
-  // Enhanced initialization
+  // Reveal on scroll for showcase section
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoaded(true), 300);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Enhanced intersection observers with smooth animations
-  useEffect(() => {
-    // Reveal on scroll for showcase section
     const revealElements = document.querySelectorAll('.reveal-up');
-    observersRef.current.reveal = new IntersectionObserver(
+    const revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('in-view');
-            // Add staggered delay for children
-            const children = entry.target.querySelectorAll('.stagger-child');
-            children.forEach((child, index) => {
-              (child as HTMLElement).style.animationDelay = `${index * 0.1}s`;
-            });
           }
         });
       },
-      { 
-        threshold: 0.15,
-        rootMargin: '0px 0px -50px 0px'
-      }
+      { threshold: 0.15 }
     );
 
-    revealElements.forEach((el) => observersRef.current.reveal?.observe(el));
+    revealElements.forEach((el) => revealObserver.observe(el));
 
-    // Service cards observer
-    observersRef.current.services = new IntersectionObserver(
+    return () => revealObserver.disconnect();
+  }, []);
+
+    // Intersection Observer for minimal service animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('service-visible');
-            // Add micro-interaction ready state
-            setTimeout(() => {
-              entry.target.classList.add('interaction-ready');
-            }, 600);
           }
         });
       },
-      { 
-        threshold: 0.2, 
-        rootMargin: '0px 0px -100px 0px' 
-      }
+      { threshold: 0.2, rootMargin: '0px 0px -100px 0px' }
     );
 
     cardsRef.current.forEach((card) => {
-      if (card) observersRef.current.services?.observe(card);
+      if (card) observer.observe(card);
     });
 
-    return () => {
-      observersRef.current.reveal?.disconnect();
-      observersRef.current.services?.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
-
-  // Enhanced image tilt effect with smooth physics
+  
+  // Image tilt effect
   useEffect(() => {
     const images = document.querySelectorAll('.services-visual img');
-    let animationFrame: number;
 
-    const handleMouseMove = (ev: MouseEvent) => {
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-      
-      animationFrame = requestAnimationFrame(() => {
+    images.forEach((img) => {
+      const handleMouseMove = (ev: MouseEvent) => {
         const target = ev.currentTarget as HTMLElement;
         const r = target.getBoundingClientRect();
         const x = (ev.clientX - r.left) / r.width - 0.5;
         const y = (ev.clientY - r.top) / r.height - 0.5;
-        
-        // Smoother transform with easing
-        target.style.transform = `
-          perspective(1200px) 
-          rotateX(${y * 8}deg) 
-          rotateY(${x * -8}deg) 
-          scale3d(1.02, 1.02, 1.02)
-          translateZ(20px)
-        `;
-        
-        // Enhanced parallax effect for inner elements
-        const overlay = target.parentElement?.querySelector('.image-overlay') as HTMLElement;
-        if (overlay) {
-          overlay.style.transform = `translateX(${x * 20}px) translateY(${y * 20}px)`;
-        }
-      });
-    };
+        target.style.transform = `perspective(900px) rotateX(${y * 6}deg) rotateY(${x * -6}deg) scale(1.02)`;
+      };
 
-    const handleMouseLeave = (ev: MouseEvent) => {
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-      
-      const target = ev.currentTarget as HTMLElement;
-      target.style.transition = 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
-      target.style.transform = '';
-      
-      // Reset overlay
-      const overlay = target.parentElement?.querySelector('.image-overlay') as HTMLElement;
-      if (overlay) {
-        overlay.style.transform = '';
-      }
-      
-      // Remove transition after animation
-      setTimeout(() => {
-        target.style.transition = '';
-      }, 600);
-    };
+      const handleMouseLeave = (ev: MouseEvent) => {
+        const target = ev.currentTarget as HTMLElement;
+        target.style.transform = '';
+      };
 
-    images.forEach((img) => {
       img.addEventListener('mousemove', handleMouseMove as EventListener);
       img.addEventListener('mouseleave', handleMouseLeave as EventListener);
-    });
 
-    return () => {
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-      images.forEach((img) => {
+      return () => {
         img.removeEventListener('mousemove', handleMouseMove as EventListener);
         img.removeEventListener('mouseleave', handleMouseLeave as EventListener);
-      });
-    };
+      };
+    });
   }, []);
 
-  // Enhanced card hover handlers
-  const handleCardMouseEnter = useCallback((index: number) => {
-    setHoveredCard(index);
-  }, []);
-
-  const handleCardMouseLeave = useCallback(() => {
-    setHoveredCard(null);
-  }, []);
+  const servicesList = [
+    {
+      title: 'Custom Website Design',
+      description: 'Crafted pixel-perfect designs that reflect your brand identity. We create stunning, user-friendly websites that captivate visitors and convert them into loyal customers through strategic visual storytelling,',
+    },
+    {
+      title: 'Full-Stack Web Development',
+      description: 'Building robust, scalable web apps with cutting-edge technologies. From front-end interfaces to back-end architecture, we deliver high-performance solutions that grow with your business needs.',
+    },
+    {
+      title: 'AI-Powered Chatbots',
+      description: 'Intelligent conversational AI that engages customers 24/7. Our chatbots provide instant support, answer queries, and guide users through seamless experiences while learning from every interaction.',
+    },
+    {
+      title: 'Social Media Management',
+      description: 'Strategic social media campaigns that build communities and drive engagement. We manage your presence across platforms, create compelling content, and grow your audience organically.',
+    },
+    {
+      title: 'Brand Identity & Visual Design',
+      description: 'Comprehensive brand development from concept to execution. We craft memorable logos, color palettes, and visual systems that establish strong brand recognition and communicate your unique value proposition.',
+    },
+    {
+      title: 'Social Media & Digital Advertising',
+      description: 'High-converting ad campaigns across Facebook, Instagram, LinkedIn, and Google. We optimize targeting, creative, and messaging to maximize ROI and deliver measurable results for your marketing investment.',
+    },
+    {
+      title: 'SEO Optimization & Growth Strategy',
+      description: 'Comprehensive SEO solutions that boost your search rankings and organic traffic. We implement technical optimizations, content strategies, and link-building campaigns that deliver sustainable growth and visibility.',
+    },
+    {
+      title: 'AI Automation Agents',
+      description: 'Custom AI-powered automation that streamlines workflows and increases efficiency. From data processing to customer service, we build intelligent agents that handle repetitive tasks and free up your team.',
+    },
+    {
+      title: 'Mobile App Design & Development',
+      description: 'Native and cross-platform mobile applications that deliver exceptional user experiences. We design and develop iOS and Android apps that are intuitive, fast, and aligned with your business objectives.',
+    },
+    {
+      title: 'Marketing Audit & Strategic Planning',
+      description: 'In-depth analysis of your marketing performance with actionable recommendations. We identify opportunities, optimize spending, and create comprehensive strategies that align with your business goals and budget.',
+    },
+    {
+      title: 'E-Commerce Store Development',
+      description: 'Complete e-commerce solutions built for conversions and scalability. From product catalogs to secure checkout systems, we create online stores that provide seamless shopping experiences and drive revenue.',
+    },
+    {
+      title: 'Content Creation & Copywriting',
+      description: 'Compelling content that resonates with your audience and drives action. Our expert writers craft SEO-optimized blog posts, website copy, and marketing materials that establish authority and generate leads.',
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] overflow-hidden">
-      {/* Enhanced Hero Section */}
+      {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
         <div className="absolute inset-0">
           <WebGLParticles />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40"></div>
+          <div className="absolute inset-0 bg-black/40"></div>
         </div>
 
         <div className={`relative z-10 max-w-6xl mx-auto px-6 text-center transition-all duration-1000 ${
           isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}>
-          <div className="mb-8 stagger-parent">
-            <h1 className="text-6xl md:text-8xl font-black mb-6 stagger-child">
+          <div className="mb-8">
+            <h1 className="text-6xl md:text-8xl font-black mb-6">
               <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-teal-500 bg-clip-text text-transparent animate-glow-text">
                 OUR SERVICES
               </span>
             </h1>
           </div>
 
-          <div className="mb-12 stagger-child">
+          <div className="mb-12">
             <p className="text-xl md:text-2xl text-gray-300 font-light max-w-3xl mx-auto leading-relaxed">
               Crafting digital excellence through innovative solutions that transform your vision into reality
             </p>
           </div>
 
-          <div className="flex gap-6 justify-center flex-wrap stagger-child">
+          <div className="flex gap-6 justify-center flex-wrap">
             <button
               onClick={handleDiscoverClick}
               className="group relative px-12 py-4 rounded-full bg-transparent border-2 border-cyan-400/50 text-white font-semibold text-lg overflow-hidden transition-all duration-500 hover:scale-105 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/25 backdrop-blur-sm"
