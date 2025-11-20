@@ -101,7 +101,7 @@ export default function Services({ onNavigate }: ServicesProps) {
     },
     {
       title: 'Social Media Management',
-      description: 'Intelligent conversational AI that engages customers 24/7. Our chatbots provide instant support, answer queries, and guide users through seamless experiences while learning from every interaction.',
+      description: 'Strategic social media campaigns that build communities and drive engagement. We manage your presence across platforms, create compelling content, and grow your audience organically.',
     },
     {
       title: 'Brand Identity & Visual Design',
