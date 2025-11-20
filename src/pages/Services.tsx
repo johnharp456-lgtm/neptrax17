@@ -178,52 +178,55 @@ export default function Services({ onNavigate }: ServicesProps) {
         </div>
       </section>
 
-      {/* Minimalist Services Gallery */}
-      <section ref={servicesGridRef} className="relative py-32 bg-white">
-        <div className="max-w-7xl mx-auto px-8 md:px-12 lg:px-16">
-          {/* Section Header */}
-          <div className="mb-24 text-center">
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-6 tracking-tight">
-              What We Offer
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto font-light">
-              Comprehensive solutions designed to elevate your digital presence
-            </p>
-          </div>
+{/* Minimalist Services Gallery - FIXED */}
+<section ref={servicesGridRef} className="relative py-32 bg-white">
+  <div className="max-w-7xl mx-auto px-8 md:px-12 lg:px-16">
+    {/* Section Header */}
+    <div className="mb-24 text-center">
+      <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-6 tracking-tight">
+        What We Offer
+      </h2>
+      <p className="text-xl text-gray-600 max-w-2xl mx-auto font-light">
+        Comprehensive solutions designed to elevate your digital presence
+      </p>
+    </div>
 
-          {/* Two-Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-24">
-            {servicesList.map((service, index) => (
-              <div
-                key={index}
-                ref={(el) => (cardsRef.current[index] = el)}
-                className="minimal-service-item group relative py-12 border-t border-gray-200"
-              >
-                {/* Number */}
-                <div className="absolute -left-2 top-8 text-7xl font-bold text-gray-200 transition-all duration-500 group-hover:text-gray-300 group-hover:scale-110">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
+    {/* Two-Column Grid - FIXED LAYOUT */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-8">
+      {servicesList.map((service, index) => (
+        <div
+          key={index}
+          ref={(el) => (cardsRef.current[index] = el)}
+          className="minimal-service-item group relative py-8 border-t border-gray-200"
+        >
+          {/* Content Container - FIXED PADDING */}
+          <div className="flex gap-6 items-start">
+            {/* Number - FIXED POSITIONING */}
+            <div className="flex-shrink-0 text-5xl font-bold text-gray-200 transition-all duration-500 group-hover:text-gray-300 group-hover:scale-110 min-w-[60px]">
+              {String(index + 1).padStart(2, '0')}
+            </div>
 
-                {/* Content */}
-                <div className="pl-24 transition-all duration-500 group-hover:pl-28">
-                  {/* Title */}
-                  <h3 className="text-2xl md:text-3xl font-bold text-black mb-4 tracking-tight">
-                    {service.title}
-                  </h3>
+            {/* Text Content - FIXED WIDTH MANAGEMENT */}
+            <div className="flex-1 min-w-0"> {/* This prevents text overflow */}
+              {/* Title */}
+              <h3 className="text-xl md:text-2xl font-bold text-black mb-3 tracking-tight break-words">
+                {service.title}
+              </h3>
 
-                  {/* Expanding Line */}
-                  <div className="minimal-line w-0 h-px bg-black mb-6 transition-all duration-700 group-hover:w-16"></div>
+              {/* Expanding Line */}
+              <div className="minimal-line w-0 h-px bg-black mb-4 transition-all duration-700 group-hover:w-16"></div>
 
-                  {/* Description */}
-                  <p className="text-gray-600 leading-relaxed font-light">
-                    {service.description}
-                  </p>
-                </div>
-              </div>
-            ))}
+              {/* Description - FIXED TEXT WRAPPING */}
+              <p className="text-gray-600 leading-relaxed font-light text-base break-words">
+                {service.description}
+              </p>
+            </div>
           </div>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
 
       {/* Services Showcase Section */}
       <section id="services-showcase-2" aria-label="Services showcase" className="relative bg-[#0b0b0b] py-[120px] overflow-hidden">
